@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace TivoliApp
 {
@@ -31,14 +32,20 @@ namespace TivoliApp
         {
             var allLogLines = fileLineLoader.Load();
 
-            var rowsByStatusCode = "";
-
-            
+            foreach (var logEntry in allLogLines.Where(x => x.IsValid))
+            {
+                Console.WriteLine(logEntry.StatusCode);
+            }
 
             //Hvor mange rækker er der af hver statuskode
             //Hvad er gennemsnittet af millisecods spent
             //Største og mindste værdi af millisecods spent
             //Hvad er den mindste balance, der er udestående på en ordre
+
+            Console.WriteLine("Her er resultaterne:");
+            Console.WriteLine($"Antal linjer i fil:                     {allLogLines.Count()}");
+            Console.WriteLine($"Antal linier der kunne analyseres:       {allLogLines.Where(x => x.IsValid).Count()}");
+            Console.WriteLine($"Antal linier der ikke kunne analyseres:  {allLogLines.Where(x => !x.IsValid).Count()}");
         }
 
     }
@@ -53,9 +60,9 @@ namespace TivoliApp
         public IList<LogEntry> Load()
         {
             var allLines = new List<LogEntry>();
-            
+
             string line;
-  
+
             StreamReader file = new StreamReader(@"errors.csv");
             while ((line = file.ReadLine()) != null)
             {
@@ -63,7 +70,7 @@ namespace TivoliApp
             }
 
             file.Close();
-    
+
             return allLines;
         }
     }
@@ -77,9 +84,23 @@ namespace TivoliApp
         public string MillisecondsSpent { get; }
         public string LogLine { get; }
 
-        public LogEntry(string LogLine)
+        public bool IsValid{ get; }
+
+        public LogEntry(string logLine)
         {
-            this.LogLine = LogLine;
+            this.LogLine = logLine;
+
+            var lineSplit = logLine.Split(';');
+
+            if (lineSplit?.Length == 4)
+            {
+                this.CustomerContactId = lineSplit[0];
+                this.StatusCode = lineSplit[1];
+                this.IsValid = true;
+
+            } else {
+                this.IsValid = false;
+            }
         }
 
     }
